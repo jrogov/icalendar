@@ -32,7 +32,7 @@ defmodule VObject.Mixfile do
       # Code style linter
       {:dogma, ">= 0.0.0", only: ~w(dev test)a},
       # Automatic test runner
-      {:mix_test_watch, ">= 0.0.0", only: :dev},
+      # {:mix_test_watch, ">= 0.0.0", only: :dev},
 
       # Markdown processor
       {:earmark, "~> 1.0", only: [:dev, :test]},
@@ -46,6 +46,9 @@ defmodule VObject.Mixfile do
       # Timezones, period parsing, intervals
       {:timex, "~> 3.0"},
       {:calendar, "~> 0.17.2"},
+
+      # Generating Calendar UID
+      {:elixir_uuid, "~> 1.2"},
 
       {:eflame, "~> 1.0.1", only: :dev},
     ]

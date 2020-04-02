@@ -42,4 +42,13 @@ defmodule ICalendar.Period do
   def to_interval(%__MODULE__{from: from, until: until}) do
     Timex.Interval.new(from: from, until: until)
   end
+
+
+  defimpl ICalendar.Property.Value do
+    def encode(val, _opts) do
+      from = Value.encode(val.from)
+      until = Value.encode(val.until)
+      from <> "/" <> until
+    end
+  end
 end

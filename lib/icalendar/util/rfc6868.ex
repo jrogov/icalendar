@@ -1,4 +1,4 @@
-defmodule ICalendar.RFC6868 do
+defmodule ICalendar.Util.RFC6868 do
   @doc ~S"""
   RFC6868 parameter encoding unescape.
 
@@ -6,7 +6,7 @@ defmodule ICalendar.RFC6868 do
   """
   @spec unescape(String.t) :: String.t
   def unescape(string) do
-    Regex.replace(~r/\^['n^]/, string, fn 
+    Regex.replace(~r/\^['n^]/, string, fn
       "^'" -> ~s(")
       "^n" -> "\n"
       "^^" -> "^"
@@ -20,7 +20,7 @@ defmodule ICalendar.RFC6868 do
   """
   @spec escape(String.t) :: String.t
   def escape(string) do
-    Regex.replace(~r/["\n^]/, string, fn 
+    Regex.replace(~r/["\n^]/, string, fn
       ~s(") -> "^'"
       "\n" -> "^n"
       "^" -> "^^"

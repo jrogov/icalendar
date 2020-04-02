@@ -22,4 +22,23 @@ defmodule ICalendar.Time do
   def to_time(%__MODULE__{hour: hour, minute: minute, second: second, time_zone: nil}) do
     Elixir.Time.new(hour, minute, second)
   end
+
+  defimpl ICalendar.Property.Value do
+    import ICalendar.Util, only: [zero_pad: 2]
+    def encode(%{time_zone: "Etc/UTC"} = val, _opts) do
+      zero_pad(val.hour, 2) <> zero_pad(val.minute, 2) <> zero_pad(val.second, 2) <> "Z"
+    end
+
+    def encode(%{time_zone: time_zone} = val, _opts) when not is_nil(time_zone) do
+      {
+        zero_pad(val.hour, 2) <> zero_pad(val.minute, 2) <> zero_pad(val.second, 2),
+        %{tzid: time_zone}
+      }
+    end
+
+    def encode(val, _opts) do
+      zero_pad(val.hour, 2) <> zero_pad(val.minute, 2) <> zero_pad(val.second, 2)
+    end
+  end
+
 end

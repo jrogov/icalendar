@@ -428,4 +428,17 @@ defmodule ICalendar.RRULE do
   def validate_param(prop = %Property{key: key}) do
     {:error, prop, "'#{key}' is not a recognised property"}
   end
+
+  defimpl ICalendar.Property.Value do
+    alias ICalendar.Util
+    def encode(val, _opts) do
+      val
+      |> Map.from_struct
+      |> Map.keys
+      |> Util.RRULE.order_conventionally
+      |> Enum.map(&(Util.RRULE.serialize(val, &1)))
+      |> Enum.reject(&(&1 == nil))
+      |> Enum.join(";")
+    end
+  end
 end

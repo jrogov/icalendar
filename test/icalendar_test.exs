@@ -1,82 +1,123 @@
 defmodule ICalendarTest do
   use ExUnit.Case
+  use ICalendarTest.Helpers
+  alias ICalendarTest.Helpers
+  use ICalendar
 
-  test "ICalendar.to_ics/1 of empty calendar" do
-    ics = %ICalendar{} |> ICalendar.to_ics
-    assert ics == """
+  test "ICalendar.encode/1 of empty calendar" do
+    ics = I.Calendar.new() |> I.encode() |> IO.chardata_to_string()
+
+    assert ics == Helpers.newline_to_crlf("""
     BEGIN:VCALENDAR
-    CALSCALE:GREGORIAN
     VERSION:2.0
+    PRODID:-//arikai//iCalendar 0.5.0//EN
+    CALSCALE:GREGORIAN
     END:VCALENDAR
-    """
+    """)
   end
 
-  test "ICalendar.to_ics/1 of a calendar with an event, as in README" do
-    events = [
-      %ICalendar.Event{
-        summary: "Film with Amy and Adam",
-        dtstart: Timex.to_datetime({{2015, 12, 24}, {8, 30, 00}}),
-        dtend:   Timex.to_datetime({{2015, 12, 24}, {8, 45, 00}}),
-        description: "Let's go see Star Wars.",
-      },
-      %ICalendar.Event{
-        summary: "Morning meeting",
-        dtstart: Timex.to_datetime({{2015, 12, 24}, {19, 00, 00}}),
-        dtend:   Timex.to_datetime({{2015, 12, 24}, {22, 30, 00}}),
-        description: "A big long meeting with lots of details.",
-      },
-    ]
-    ics = %ICalendar{ events: events } |> ICalendar.to_ics
-
-    assert ics == """
-    BEGIN:VCALENDAR
-    CALSCALE:GREGORIAN
-    VERSION:2.0
-    BEGIN:VEVENT
-    DESCRIPTION:Let's go see Star Wars.
-    DTEND;TZID=Etc/UTC:20151224T084500
-    DTSTART;TZID=Etc/UTC:20151224T083000
-    SUMMARY:Film with Amy and Adam
-    END:VEVENT
-    BEGIN:VEVENT
-    DESCRIPTION:A big long meeting with lots of details.
-    DTEND;TZID=Etc/UTC:20151224T223000
-    DTSTART;TZID=Etc/UTC:20151224T190000
-    SUMMARY:Morning meeting
-    END:VEVENT
-    END:VCALENDAR
-    """
+  test "ICalendar.encode/1 of a calendar with an event, as in README" do
+    ics =
+      [
+        # TODO: force UTC encoding of dtstamp (another type)
+        I.Event.new(
+          uid: "film-amy-adam",
+          dtstamp: ~U[2015-12-23 22:00:00Z],
+          summary: "Film with Amy and Adam",
+          when: {~U[2015-12-24 08:30:00Z], minutes: 15},
+          description: "Let's go see Star Wars.",
+        ),
+        I.Event.new(
+          uid: "morning-meeting-9000",
+          dtstamp: ~U[2015-12-24 18:00:00Z],
+          summary: "Morning meeting",
+          when: {~U[2015-12-24 19:00:00Z], ~U[2015-12-24 22:30:00Z]},
+          description: "A big long meeting with lots of details.",
+        )
+      ]
+      |> I.Calendar.new([])
+      |> I.encode()
+      |> assert_lines_fuzzy([
+           """
+           BEGIN:VCALENDAR
+           VERSION:2.0
+           PRODID:-//arikai//iCalendar 0.5.0//EN
+           CALSCALE:GREGORIAN
+           BEGIN:VEVENT
+           UID:film-amy-adam
+           DTSTAMP:20151223T220000Z
+           DTSTART:20151224T083000Z
+           DTEND:20151224T084500Z
+           """,
+           {:fuzzy,
+           """
+           SUMMARY:Film with Amy and Adam
+           DESCRIPTION:Let's go see Star Wars.
+           """},
+           """
+           END:VEVENT
+           BEGIN:VEVENT
+           UID:morning-meeting-9000
+           DTSTAMP:20151224T180000Z
+           DTSTART:20151224T190000Z
+           DTEND:20151224T223000Z
+           """,
+           {:fuzzy,
+           """
+           SUMMARY:Morning meeting
+           DESCRIPTION:A big long meeting with lots of details.
+           """},
+           """
+           END:VEVENT
+           END:VCALENDAR
+           """])
   end
 
   test "Icalender.to_ics/1 with location and sanitization" do
-    events = [
-      %ICalendar.Event{
+    [
+      I.Event.new(
+        uid: "film-amy-adam",
+        dtstamp: ~U[2015-12-23 22:00:00Z],
         summary: "Film with Amy and Adam",
-        dtstart: Timex.to_datetime({{2015, 12, 24}, {8, 30, 00}}),
-        dtend:   Timex.to_datetime({{2015, 12, 24}, {8, 45, 00}}),
+        when: {~U[2015-12-24 08:30:00Z], minutes: 15},
         description: "Let's go see Star Wars, and have fun.",
         location: "123 Fun Street, Toronto ON, Canada"
-      },
+      )
     ]
-    ics = %ICalendar{ events: events } |> ICalendar.to_ics
-    assert ics == """
-    BEGIN:VCALENDAR
-    CALSCALE:GREGORIAN
-    VERSION:2.0
-    BEGIN:VEVENT
-    DESCRIPTION:Let's go see Star Wars\\, and have fun.
-    DTEND;TZID=Etc/UTC:20151224T084500
-    DTSTART;TZID=Etc/UTC:20151224T083000
-    LOCATION:123 Fun Street\\, Toronto ON\\, Canada
-    SUMMARY:Film with Amy and Adam
-    END:VEVENT
-    END:VCALENDAR
-    """
+    |> I.Calendar.new([])
+    |> I.encode()
+    |> assert_lines_fuzzy([
+         """
+         BEGIN:VCALENDAR
+         VERSION:2.0
+         PRODID:-//arikai//iCalendar 0.5.0//EN
+         CALSCALE:GREGORIAN
+         BEGIN:VEVENT
+         UID:film-amy-adam
+         DTSTAMP:20151223T220000Z
+         DTSTART:20151224T083000Z
+         DTEND:20151224T084500Z
+         """,
+         {:fuzzy,
+         """
+         DESCRIPTION:Let's go see Star Wars\\, and have fun.
+         LOCATION:123 Fun Street\\, Toronto ON\\, Canada
+         SUMMARY:Film with Amy and Adam
+         """},
+         """
+         END:VEVENT
+         END:VCALENDAR
+         """
+    ])
+
   end
 
-  test "ICalendar.to_ics/1 with RRULE" do
-    events = [
-      %ICalendar.Event{
+  test "ICalendar.encode/1 with RRULE" do
+    [
+      I.Event.new(
+        uid: "event-unique-uid",
+        dtstamp: ~U[1990-01-01 00:00:00Z],
+        when: ~U[1990-01-01 00:00:00Z],
         rrule: %ICalendar.RRULE{
           frequency: :yearly,
           until: Timex.to_datetime({{2022, 10, 12}, {15, 30, 0}}, "Etc/UTC"),
@@ -84,115 +125,118 @@ defmodule ICalendarTest do
           week_start: :monday,
           by_month: [:april]
         }
-      }
+      )
     ]
-
-    ics =
-      %ICalendar{ events: events }
-      |> ICalendar.to_ics
-
-    assert ics == """
-    BEGIN:VCALENDAR
-    CALSCALE:GREGORIAN
-    VERSION:2.0
-    BEGIN:VEVENT
-    RRULE:FREQ=YEARLY;UNTIL=20221012T153000;BYDAY=MO,WE,FR;BYMONTH=4;WKST=MO
-    END:VEVENT
-    END:VCALENDAR
-    """
+    |> I.Calendar.new([])
+    |> I.encode()
+    |> assert_lines_fuzzy([
+         """
+         BEGIN:VCALENDAR
+         VERSION:2.0
+         PRODID:-//arikai//iCalendar 0.5.0//EN
+         CALSCALE:GREGORIAN
+         BEGIN:VEVENT
+         UID:event-unique-uid
+         DTSTAMP:19900101T000000Z
+         DTSTART:19900101T000000Z
+         RRULE:FREQ=YEARLY;UNTIL=20221012T153000Z;BYDAY=MO,WE,FR;BYMONTH=4;WKST=MO
+         END:VEVENT
+         END:VCALENDAR
+         """
+    ])
   end
 
-  test "ICalender.to_ics/1 -> ICalendar.from_ics/1 and back again" do
-    events = [
-      %ICalendar.Event{
-        summary: "Film with Amy and Adam",
-        dtstart: Timex.to_datetime({{2015, 12, 24}, {8, 30, 00}}),
-        dtend:   Timex.to_datetime({{2015, 12, 24}, {8, 45, 00}}),
-        description: "Let's go see Star Wars, and have fun.",
-        location: "123 Fun Street, Toronto ON, Canada"
-      }
-    ]
-    {:ok, new_event} =
-      %ICalendar{ events: events }
-      |> ICalendar.to_ics
-      |> ICalendar.from_ics
+#   test "ICalender.to_ics/1 -> ICalendar.from_ics/1 and back again" do
+#     events = [
+#       %ICalendar.Event{
+#         summary: "Film with Amy and Adam",
+#         dtstart: Timex.to_datetime({{2015, 12, 24}, {8, 30, 00}}),
+#         dtend:   Timex.to_datetime({{2015, 12, 24}, {8, 45, 00}}),
+#         description: "Let's go see Star Wars, and have fun.",
+#         location: "123 Fun Street, Toronto ON, Canada"
+#       }
+#     ]
+#     {:ok, new_event} =
+#       %ICalendar{ events: events }
+#       |> ICalendar.encode
+#       |> ICalendar.from_ics
 
-    assert events |> List.first == new_event
-  end
+#     assert events |> List.first == new_event
+#   end
 
-  test "encode_to_iodata/2" do
-    events = [
-      %ICalendar.Event{
-        summary: "Film with Amy and Adam",
-        dtstart: Timex.to_datetime({{2015, 12, 24}, {8, 30, 00}}),
-        dtend:   Timex.to_datetime({{2015, 12, 24}, {8, 45, 00}}),
-        description: "Let's go see Star Wars.",
-      },
-      %ICalendar.Event{
-        summary: "Morning meeting",
-        dtstart: Timex.to_datetime({{2015, 12, 24}, {19, 00, 00}}),
-        dtend:   Timex.to_datetime({{2015, 12, 24}, {22, 30, 00}}),
-        description: "A big long meeting with lots of details.",
-      },
-    ]
-    cal = %ICalendar{ events: events }
+#   test "encode_to_iodata/2" do
+#     events = [
+#       %ICalendar.Event{
+#         summary: "Film with Amy and Adam",
+#         dtstart: Timex.to_datetime({{2015, 12, 24}, {8, 30, 00}}),
+#         dtend:   Timex.to_datetime({{2015, 12, 24}, {8, 45, 00}}),
+#         description: "Let's go see Star Wars.",
+#       },
+#       %ICalendar.Event{
+#         summary: "Morning meeting",
+#         dtstart: Timex.to_datetime({{2015, 12, 24}, {19, 00, 00}}),
+#         dtend:   Timex.to_datetime({{2015, 12, 24}, {22, 30, 00}}),
+#         description: "A big long meeting with lots of details.",
+#       },
+#     ]
+#     cal = %ICalendar{ events: events }
 
-    assert {:ok, ical} = ICalendar.encode_to_iodata(cal, [])
-    assert ical == """
-    BEGIN:VCALENDAR
-    CALSCALE:GREGORIAN
-    VERSION:2.0
-    BEGIN:VEVENT
-    DESCRIPTION:Let's go see Star Wars.
-    DTEND;TZID=Etc/UTC:20151224T084500
-    DTSTART;TZID=Etc/UTC:20151224T083000
-    SUMMARY:Film with Amy and Adam
-    END:VEVENT
-    BEGIN:VEVENT
-    DESCRIPTION:A big long meeting with lots of details.
-    DTEND;TZID=Etc/UTC:20151224T223000
-    DTSTART;TZID=Etc/UTC:20151224T190000
-    SUMMARY:Morning meeting
-    END:VEVENT
-    END:VCALENDAR
-    """
-  end
+#     assert {:ok, ical} = ICalendar.encode_to_iodata(cal, [])
+#     assert ical == """
+#     BEGIN:VCALENDAR
+#     CALSCALE:GREGORIAN
+#     VERSION:2.0
+#     BEGIN:VEVENT
+#     DESCRIPTION:Let's go see Star Wars.
+#     DTEND;TZID=Etc/UTC:20151224T084500
+#     DTSTART;TZID=Etc/UTC:20151224T083000
+#     SUMMARY:Film with Amy and Adam
+#     END:VEVENT
+#     BEGIN:VEVENT
+#     DESCRIPTION:A big long meeting with lots of details.
+#     DTEND;TZID=Etc/UTC:20151224T223000
+#     DTSTART;TZID=Etc/UTC:20151224T190000
+#     SUMMARY:Morning meeting
+#     END:VEVENT
+#     END:VCALENDAR
+#     """
+#   end
 
-  test "encode_to_iodata/1" do
-    events = [
-      %ICalendar.Event{
-        summary: "Film with Amy and Adam",
-        dtstart: Timex.to_datetime({{2015, 12, 24}, {8, 30, 00}}),
-        dtend:   Timex.to_datetime({{2015, 12, 24}, {8, 45, 00}}),
-        description: "Let's go see Star Wars.",
-      },
-      %ICalendar.Event{
-        summary: "Morning meeting",
-        dtstart: Timex.to_datetime({{2015, 12, 24}, {19, 00, 00}}),
-        dtend:   Timex.to_datetime({{2015, 12, 24}, {22, 30, 00}}),
-        description: "A big long meeting with lots of details.",
-      },
-    ]
-    cal = %ICalendar{ events: events }
+#   test "encode_to_iodata/1" do
+#     events = [
+#       %ICalendar.Event{
+#         summary: "Film with Amy and Adam",
+#         dtstart: Timex.to_datetime({{2015, 12, 24}, {8, 30, 00}}),
+#         dtend:   Timex.to_datetime({{2015, 12, 24}, {8, 45, 00}}),
+#         description: "Let's go see Star Wars.",
+#       },
+#       %ICalendar.Event{
+#         summary: "Morning meeting",
+#         dtstart: Timex.to_datetime({{2015, 12, 24}, {19, 00, 00}}),
+#         dtend:   Timex.to_datetime({{2015, 12, 24}, {22, 30, 00}}),
+#         description: "A big long meeting with lots of details.",
+#       },
+#     ]
+#     cal = %ICalendar{ events: events }
 
-    assert {:ok, ical} = ICalendar.encode_to_iodata(cal)
-    assert ical == """
-    BEGIN:VCALENDAR
-    CALSCALE:GREGORIAN
-    VERSION:2.0
-    BEGIN:VEVENT
-    DESCRIPTION:Let's go see Star Wars.
-    DTEND;TZID=Etc/UTC:20151224T084500
-    DTSTART;TZID=Etc/UTC:20151224T083000
-    SUMMARY:Film with Amy and Adam
-    END:VEVENT
-    BEGIN:VEVENT
-    DESCRIPTION:A big long meeting with lots of details.
-    DTEND;TZID=Etc/UTC:20151224T223000
-    DTSTART;TZID=Etc/UTC:20151224T190000
-    SUMMARY:Morning meeting
-    END:VEVENT
-    END:VCALENDAR
-    """
-  end
+#     assert {:ok, ical} = ICalendar.encode_to_iodata(cal)
+#     assert ical == """
+#     BEGIN:VCALENDAR
+#     CALSCALE:GREGORIAN
+#     VERSION:2.0
+#     BEGIN:VEVENT
+#     DESCRIPTION:Let's go see Star Wars.
+#     DTEND;TZID=Etc/UTC:20151224T084500
+#     DTSTART;TZID=Etc/UTC:20151224T083000
+#     SUMMARY:Film with Amy and Adam
+#     END:VEVENT
+#     BEGIN:VEVENT
+#     DESCRIPTION:A big long meeting with lots of details.
+#     DTEND;TZID=Etc/UTC:20151224T223000
+#     DTSTART;TZID=Etc/UTC:20151224T190000
+#     SUMMARY:Morning meeting
+#     END:VEVENT
+#     END:VCALENDAR
+#     """
+#   end
 end

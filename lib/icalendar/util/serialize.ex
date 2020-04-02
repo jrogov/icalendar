@@ -59,8 +59,8 @@ defmodule ICalendar.Util.RRULE do
   defp serialize_value(:count, value) when not is_nil(value) do
     Integer.to_string(value)
   end
-  defp serialize_value(:until, value) when not is_nil(value) do 
-    ICalendar.Value.encode(value)
+  defp serialize_value(:until, value) when not is_nil(value) do
+    ICalendar.Property.Value.encode(value)
   end
   defp serialize_value(:interval, value) when not is_nil(value) do
     Integer.to_string(value)

@@ -1,6 +1,17 @@
 defmodule ICalendar do
   @moduledoc """
-  Generating ICalendars
+  API for generating calendars in ICalendar (ICS) format
+
+  Example:
+
+    iex> use ICalendar
+    ...> ICalendar.new(
+    ...>    name: "My cool name",
+    ...>    description: value("My description", param: "Param value")
+    ...>    some_recurring_prop: [
+    ...>      "Value",
+    ...>      value("Value with params", param: "Some param")
+    ...>     ])
   """
 
   @prodid "-//Polyfox//vObject 0.5.0//EN"
@@ -10,19 +21,19 @@ defmodule ICalendar do
     %{
       # defaults
       __type__: :calendar,
-      prodid: {@prodid, %{}},
-      version: {"2.0", %{}},
-      calscale: {"GREGORIAN", %{}},
+      prodid: @prodid,
+      version: "2.0",
+      calscale: "GREGORIAN"
     }
   end
 
   @spec new(props :: map) :: map
   def new(props) do
-    Map.merge(new(), props)
+    struct(new(), props)
   end
 
-  defdelegate decode(string), to: ICalendar.Decoder
-  defdelegate encode(object), to: ICalendar.Encoder
+  defdelegate encode(object), to: ICalendar.Component.Encoder
+  # defdelegate decode(string), to: ICalendar.Decoder
 
   @doc """
   To create a Phoenix/Plug controller and view that output ics format:
@@ -45,64 +56,25 @@ defmodule ICalendar do
   end
   ```
   """
-  defdelegate encode_to_iodata(object, options \\ []), to: ICalendar.Encoder
+  defdelegate encode_to_iodata(object, options \\ []),
+    to: ICalendar.Encoder,
+    as: :encode
 
-  @props %{
-    action:           %{default: :text},
-    attach:           %{default: :uri}, # uri or binary
-    attendee:         %{default: :cal_address},
-    calscale:         %{default: :text},
-    categories:       %{default: :text, multi: ","},
-    class:            %{default: :text},
-    comment:          %{default: :text},
-    completed:        %{default: :date_time},
-    contact:          %{default: :text},
-    created:          %{default: :date_time},
-    description:      %{default: :text},
-    dtend:            %{default: :date_time, allowed: [:date_time, :date]},
-    dtstamp:          %{default: :date_time},
-    dtstart:          %{default: :date_time, allowed: [:date_time, :date]},
-    due:              %{default: :date_time, allowed: [:date_time, :date]},
-    duration:         %{default: :duration},
-    exdate:           %{default: :date_time, allowed: [:date_time, :date], multi: ","},
-    exrule:           %{default: :recur}, # deprecated
-    freebusy:         %{default: :period, multi: ","},
-    geo:              %{default: :float, structured: ";"},
-    last_modified:    %{default: :date_time},
-    location:         %{default: :text},
-    method:           %{default: :text},
-    organizer:        %{default: :cal_address},
-    percent_complete: %{default: :integer},
-    priority:         %{default: :integer},
-    prodid:           %{default: :text},
-    rdate:            %{default: :date_time, allowed: [:date_time, :date, :period], multi: ","}, # TODO: detect
-    recurrence_id:    %{default: :date_time, allowed: [:date_time, :date]},
-    related_to:       %{default: :text},
-    repeat:           %{default: :integer},
-    request_status:   %{default: :text},
-    resources:        %{default: :text, multi: ","},
-    rrule:            %{default: :recur},
-    sequence:         %{default: :integer},
-    status:           %{default: :text},
-    summary:          %{default: :text},
-    transp:           %{default: :text},
-    trigger:          %{default: :duration, allowed: [:duration, :date_time]},
-    tzid:             %{default: :text},
-    tzname:           %{default: :text},
-    tzoffsetfrom:     %{default: :utc_offset},
-    tzoffsetto:       %{default: :utc_offset},
-    tzurl:            %{default: :uri},
-    uid:              %{default: :text},
-    url:              %{default: :uri},
-    version:          %{default: :text},
-  }
+  # TODO: add param to support inline-encoding with comma:
+  # However, it should be noted that some properties
+  # support encoding multiple values in a single property by separating
+  # the values with a COMMA character.
+
 
   # cal_address and uri should be quoted
   # altrep delegated_from, delegated_to, dir, member, sent-by
   @params %{
     altrep: %{},
     cn: %{},
-    cutype: %{values: ["INDIVIDUAL", "GROUP", "RESOURCE", "ROOM", "UNKNOWN"], allow_x_name: true, allow_iana: true},
+    cutype: %{
+      values: ["INDIVIDUAL", "GROUP", "RESOURCE", "ROOM", "UNKNOWN"],
+      allow_x_name: true,
+      allow_iana: true},
     delegated_from: %{multi: ",", value: :cal_address},
     delegated_to: %{multi: ",", value: :cal_address},
     dir: %{},
@@ -116,8 +88,9 @@ defmodule ICalendar do
     language: %{},
     member: %{multi: ",", value: :cal_address},
     # TODO These values are actually different per-component
-    partstat: %{values: ["NEEDS-ACTION", "ACCEPTED", "DECLINED", "TENTATIVE",
-                         "DELEGATED", "COMPLETED", "IN-PROCESS"],
+    partstat: %{
+      values: ["NEEDS-ACTION", "ACCEPTED", "DECLINED", "TENTATIVE",
+               "DELEGATED", "COMPLETED", "IN-PROCESS"],
       allow_x_name: true,
       allow_iana: true
     },
@@ -145,21 +118,36 @@ defmodule ICalendar do
     }
   }
 
-  @type spec :: %{optional(atom) => any}
-
-  @spec __props__(atom) :: spec
-  for {name, spec} <- @props do
-    def __props__(unquote(name)) do
-      unquote(Macro.escape(spec))
-    end
-  end
-  def __props__(_), do: %{default: :unknown}
-
+  @typep spec :: %{atom => %{}}
   @spec __params__(atom) :: spec
-  for {name, spec} <- @params do
+
+  @params
+  |> Enum.map(fn {name, spec} ->
     def __params__(unquote(name)) do
       unquote(Macro.escape(spec))
     end
-  end
+  end)
   def __params__(_), do: %{default: :unknown}
+
+  defmacro value(val, params) do
+    params =
+      case params do
+        l when is_list(params) -> {:%{}, [], params}
+        o -> Map.new(o)
+      end
+
+    quote do
+      %ICalendar.Value{
+        value: unquote(val),
+        params: unquote(params)
+      }
+    end
+  end
+
+  defmacro __using__(opts) do
+    quote do
+      import unquote(__MODULE__), only: [value: 2]
+      alias ICalendar, as: I
+    end
+  end
 end

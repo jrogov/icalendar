@@ -68,66 +68,6 @@ defmodule ICalendar do
 
   # cal_address and uri should be quoted
   # altrep delegated_from, delegated_to, dir, member, sent-by
-  @params %{
-    altrep: %{},
-    cn: %{},
-    cutype: %{
-      values: ["INDIVIDUAL", "GROUP", "RESOURCE", "ROOM", "UNKNOWN"],
-      allow_x_name: true,
-      allow_iana: true},
-    delegated_from: %{multi: ",", value: :cal_address},
-    delegated_to: %{multi: ",", value: :cal_address},
-    dir: %{},
-    encoding: %{values: ["8BIT", "BASE64"]},
-    fmttype: %{},
-    fbtype: %{
-      values: ["FREE", "BUSY", "BUSY-UNAVAILABLE", "BUSY-TENTATIVE"],
-      allow_x_name: true,
-      allow_iana: true
-    },
-    language: %{},
-    member: %{multi: ",", value: :cal_address},
-    # TODO These values are actually different per-component
-    partstat: %{
-      values: ["NEEDS-ACTION", "ACCEPTED", "DECLINED", "TENTATIVE",
-               "DELEGATED", "COMPLETED", "IN-PROCESS"],
-      allow_x_name: true,
-      allow_iana: true
-    },
-    range: %{values: ["THISANDFUTURE"]},
-    related: %{values: ["START", "END"]},
-    reltype: %{
-      values: ["PARENT", "CHILD", "SIBLING"],
-      allow_x_name: true,
-      allow_iana_token: true
-    },
-    role: %{
-      values: ["REQ-PARTICIPANT", "CHAIR", "OPT-PARTICIPANT", "NON-PARTICIPANT"],
-      allow_x_name: true,
-      allow_iana_token: true
-    },
-    rsvp: %{value: :boolean},
-    sent_by: %{value: :cal_address},
-    tzid: %{matches: ~r/^\//},
-    value: %{
-      values: [:binary, :boolean, :cal_address, :date, :date_time,
-               :duration, :float, :integer, :period, :recur, :text,
-               :time, :uri, :utc_offset],
-      allow_x_name: true,
-      allow_iana_token: true
-    }
-  }
-
-  @typep spec :: %{atom => %{}}
-  @spec __params__(atom) :: spec
-
-  @params
-  |> Enum.map(fn {name, spec} ->
-    def __params__(unquote(name)) do
-      unquote(Macro.escape(spec))
-    end
-  end)
-  def __params__(_), do: %{default: :unknown}
 
   defmacro value(val, params) do
     params =
@@ -137,7 +77,7 @@ defmodule ICalendar do
       end
 
     quote do
-      %ICalendar.Value{
+      %ICalendar.Property.Value{
         value: unquote(val),
         params: unquote(params)
       }

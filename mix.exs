@@ -1,11 +1,11 @@
-defmodule VObject.Mixfile do
+defmodule ICalendar.Project do
   use Mix.Project
 
   @version "0.5.0"
 
   def project do
     [
-      app: :vobject,
+      app: :icalendar,
       version: @version,
       elixir: "~> 1.3",
       build_embedded: Mix.env == :prod,

@@ -6,11 +6,12 @@ defmodule ICalendar.Property.Encoder do
 
   def encode(props, opts \\ []) do
     props
+    |> Enumerable.impl_for()
     |> case do
-         single when is_map(single) -> [single]
-         many -> many
+         nil -> [props]
+         _ -> props
        end
-    |> Util.enum_map_intersperse(@crlf, &encode_prop/1, opts)
+    |> Util.enum_map_filter_intersperse(@crlf, &encode_prop/1, opts)
   end
 
   defp encode_prop({key, value}) do
@@ -21,11 +22,15 @@ defmodule ICalendar.Property.Encoder do
         value -> {value, %{}}
       end
 
-    case {value, spec} do
-      {vals, %{multi: delim}} when is_list(vals) ->
-        encode_multival_prop(key, value, params, delim)
-      {val, _} ->
-        encode_simple_prop(key, value, params)
+    case {key, value, spec} do
+      {util_key, _, _} when util_key in [:__struct__, :__type__] ->
+        false
+      {_, nil, _} ->
+        false
+      {_, vals, %{multi: delim}} when is_list(vals) ->
+        {true, encode_multival_prop(key, value, params, delim)}
+      {_, val, _} ->
+        {true, encode_simple_prop(key, value, params)}
       # {vals, _} when is_list(vals) ->
       #   vals
       #   |> Enum.map(&encode_single_prop(key, &1, params))
@@ -48,7 +53,7 @@ defmodule ICalendar.Property.Encoder do
              end
            end)
 
-    [encode_key(key), encode_params(params), ":", encoded_vals]
+    [Property.key_to_str(key), encode_params(params), ":", encoded_vals]
   end
 
   defp encode_simple_prop(key, val, params) do
@@ -61,20 +66,18 @@ defmodule ICalendar.Property.Encoder do
           {val, params}
       end
 
-    [encode_key(key), encode_params(params), ":", encoded_val]
+    [Property.key_to_str(key), encode_params(params), ":", encoded_val]
   end
 
-
-  @spec encode_key(key :: String.t) :: iodata
-  defp encode_key(key) do
-    Property.key_to_str(key)
-  end
 
   @spec encode_params(params :: map) :: iodata
   defp encode_params(m) when map_size(m) == 0, do: []
   defp encode_params(params) do
-    Util.enum_map_intersperse(params, ";",
-      fn {key, val} -> [encode_key(key) <> "=" <> RFC6868.escape(val)] end,
+    Util.enum_map_filter_intersperse(params, ";", fn
+      {key, nil} -> false
+      {key, val} ->
+        {true, [Property.Param.key_to_str(key), "=", Util.RFC6868.escape(val)]}
+      end,
       prepend: true)
   end
 

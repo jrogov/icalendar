@@ -20,7 +20,7 @@ defmodule ICalendar.Calendar do
   end
   def new(contents, opts) do
     {struct_base, props} = Keyword.split(opts, @optkeys)
-    struct(%Calendar{contents: contents, props: props}, struct_base)
+    struct(Calendar, [{:contents, contents}, {:props, props} | struct_base])
   end
 
   def encode(self) do

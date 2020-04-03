@@ -5,22 +5,20 @@ defmodule ICalendar.Event do
   alias ICalendar.Property
   alias ICalendar.Alarm
 
+  # TODO
   @type t :: %__MODULE__{
     dtstamp: DateTime,
     uid: UID,
-    when: C.juncture
+    # start:
   }
 
-  @optkeys [:dtstamp, :uid, :when, :alarms]
-
-  @enforce_keys [:when]
+  # @optkeys [:dtstamp, :uid, :start, :alarms]
+  @enforce_keys [:start]
   defstruct @enforce_keys ++ [
     __type__: :component,
-    dtstamp: DateTime, # :required, :once, fallback to now
-    uid: UID, # :once, :required (maybe fallback to uuidv4)
-    when: nil,
-    # :once, :required if (method in calendar), else optional,
-    alarms: [],
+    dtstamp: nil, # :required, :once, fallback to now
+    uid: nil, # :once, :required (maybe fallback to uuidv4)
+    end: nil, # :once, :required if (method in calendar), else optional,
     props: [
       # ;
       # ; The following are OPTIONAL,
@@ -37,8 +35,10 @@ defmodule ICalendar.Event do
       # attach / attendee / categories / comment /
       # contact / exdate / rstatus / related /
       # resources / rdate / x-prop / iana-prop
-    ]
+    ],
+    alarms: []
   ]
+  @needprops @struct |> Map.drop([:__struct__, :__type__, :props]) |> Map.keys()
 
   # Maybe todo
   # def spec do
@@ -50,36 +50,25 @@ defmodule ICalendar.Event do
 
 
   def new(opts) do
-    {struct_opts, props} = Keyword.split(opts, @optkeys)
-    case Keyword.pop(struct_opts, :when) do
-      {nil, _} -> throw "when field is required for #{__MODULE__}"
-      {wh, struct_opts} ->
-        struct_opts =
-          opts
-          |> Map.new()
-          |> Map.put(:when, ICalendar.Interval.new(wh))
-          |> Map.put_new_lazy(:dtstamp, fn -> Timex.now() end)
-          |> Map.put_new_lazy(:uid, fn -> UUID.uuid4() end)
-          |> Map.put_new(:props, props)
-
-        struct(Event, struct_opts)
-    end
+    {struct_opts, props} = Keyword.split(opts, @needprops)
+    struct(Event, [{:props, props} | struct_opts])
   end
 
   def encode(%__MODULE__{
-    dtstamp: dtstamp,
     uid: uid,
-    when: juncture,
+    dtstamp: dtstamp,
+    start: start,
+    end: end_arg,
+    props: props,
     alarms: alarms,
-    props: props
   }) do
     [
-      Property.encode([uid: uid, dtstamp: dtstamp]),
-      ICalendar.Interval.encode(juncture),
-      # encode_juncture(juncture),
-      # @crlf,
-      Property.encode(props),
-      # @crlf,
+      Property.encode([
+        {:uid, uid},
+        {:dtstamp, dtstamp},
+        {:dtstart, start},
+        {:dtend, ICalendar.Interval.calculate_end(start, end_arg)}
+        | props]),
       Component.encode(alarms, :alarm)
     ]
   end

@@ -83,42 +83,23 @@ defmodule ICalendar.Property do
   end
   def spec(_), do: %{default: :unknown}
 
-  def key_to_str(s) when is_binary(s), do: normalize_keystr(s)
+  # TODO TODO TODO Fix this stupid piece of shit
+  # require ICalendar.Util.Identifier
+  # ICalendar.Util.Identifier.gen_common(@props, getter: :spec)
+
+  alias ICalendar.Util.Identifier
+  def key_to_str(s) when is_binary(s), do: Identifier.normalize_keystr(s)
   for {key, spec} <- @props do
     def key_to_str(unquote(key)) do
-      unquote(
-        key
-        |> Atom.to_string()
-        |> String.upcase() # normalize_keystr
-        |> String.replace("_", "-")
-      )
+      unquote(Identifier.format_key_to_str(key))
+      #   key
+      #   |> Atom.to_string()
+      #   |> String.upcase() # normalize_keystr
+      #   |> String.replace("_", "-")
+      # )
     end
   end
-  def key_to_str(key), do: format_key_to_str(key)
+  def key_to_str(key), do: Identifier.format_key_to_str(key)
 
-  def str_to_key(str), do: format_str_to_key(str)
-
-  defp format_str_to_key(str) do
-    try do
-      str
-      |> String.downcase()
-      |> String.replace("-", "_")
-      |> String.to_existing_atom()
-    catch
-      :error, :badarg ->
-        normalize_keystr(str)
-    end
-  end
-
-  defp format_key_to_str(key) do
-    key
-    |> Atom.to_string()
-    |> normalize_keystr
-  end
-
-  defp normalize_keystr(keystr) do
-    keystr
-    |> String.upcase()
-    |> String.replace("_", "-")
-  end
+  def str_to_key(str), do: Identifier.format_str_to_key(str)
 end

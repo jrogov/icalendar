@@ -18,6 +18,20 @@ defmodule ICalendar.Interval do
     %__MODULE__{from: dt1, to: dt2}
   end
 
+  def calculate_end(%mod{} = start, end_arg) when is_dtmod(mod) do
+    do_calculate_end(start, end_arg)
+  end
+
+  def do_calculate_end(start, nil) do
+    nil
+  end
+  def do_calculate_end(start, shift_opts) when is_list(shift_opts) do
+    Timex.shift(start, shift_opts)
+  end
+  def do_calculate_end(_start, %mod{} = dt) when is_dtmod(mod) do
+    dt
+  end
+
   def encode(%{from: from, to: to}) do
     to
     |> case do

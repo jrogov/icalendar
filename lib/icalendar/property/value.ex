@@ -26,13 +26,13 @@ defimpl Value, for: Any do
   def encode(val, _opts), do: to_string(val)
 end
 
-defimpl Value, for: Float do
-  def encode(val, _opts), do: to_string(val)
-end
+# defimpl Value, for: Float do
+#   def encode(val, _opts), do: to_string(val)
+# end
 
-defimpl Value, for: Integer do
-  def encode(val, _opts), do: to_string(val)
-end
+# defimpl Value, for: Integer do
+#   def encode(val, _opts), do: to_string(val)
+# end
 
 defimpl Value, for: Tuple do
   def encode(vals, _opts) do

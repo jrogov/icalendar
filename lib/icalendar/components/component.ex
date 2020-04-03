@@ -14,7 +14,7 @@ defmodule ICalendar.Component do
 
   defmacro __using__(_) do
     quote do
-      @crlf ICalendar.Config.crlf()
+      # @crlf ICalendar.Config.crlf()
       @behaviour unquote(__MODULE__)
       alias unquote(__MODULE__)
     end

@@ -39,22 +39,34 @@ defmodule ICalendar.Util do
     |> Enum.reverse()
   end
 
-  def enum_filter_intersperse(enum, sep, fun, opts \\ [])
-  when is_function(fun, 1) do
-    enum
-    |> Enum.reduce(init_acc(sep, opts),
-                   &(if fun.(&1) do [sep, &1 | &2] else &2 end))
-    |> finish_acc(opts)
-  end
-
   def enum_map_intersperse(enum, sep, fun, opts \\ []) when is_function(fun, 1) do
     enum
     |> Enum.reduce(init_acc(sep, opts), &[sep, fun.(&1) | &2])
     |> finish_acc(opts)
   end
 
+  def enum_filter_intersperse(enum, sep, fun, opts \\ [])
+  when is_function(fun, 1) do
+    enum
+    |> Enum.reduce(init_acc(sep, opts),
+    &(if fun.(&1) do [sep, &1 | &2] else &2 end))
+    |> finish_acc(opts)
+  end
+
+  def enum_map_filter_intersperse(enum, sep, fun, opts \\ [])
+  when is_function(fun, 1) do
+    enum
+    |> Enum.reduce(init_acc(sep, opts), fn elem, acc ->
+      case fun.(elem) do
+        {true, value} -> [sep, value | acc]
+        false -> acc
+      end
+    end)
+    |> finish_acc(opts)
+  end
+
   def enum_map_reduce_intersperse(enum, acc, sep, fun, opts \\ [])
-  when is_function(fun, 3) do
+  when is_function(fun, 2) do
     {intacc, acc} = Enum.reduce(enum, {init_acc(sep, opts), acc},
       fn elem, {list_acc, acc} ->
         {new_elem, new_acc} = fun.(elem, acc)

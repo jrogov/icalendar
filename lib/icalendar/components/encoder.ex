@@ -16,9 +16,9 @@ defmodule ICalendar.Component.Encoder do
     case type == expected_type or expected_type == :any do
       false -> throw {:error, {:unexpected_component_type, type, component}}
       true ->
-        use ICalendar.Util
+        # use ICalendar.Util
+        # import ICalendar.Util, only: [sigil_i: 2]
 
-        # TODO: single pass
         encoded_component =
           component
           |> module.encode()
@@ -26,11 +26,12 @@ defmodule ICalendar.Component.Encoder do
 
         str = Component.key_to_str(module)
 
-        ~i"""
-        BEGIN:#{str}
-        #{encoded_component}
-        END:#{str}
-        """
+        ["BEGIN:", str, @crlf, encoded_component, @crlf, "END:", str]
+        # """
+        # BEGIN:#{str}
+        # #{encoded_component}
+        # END:#{str}
+        # """
     end
   end
 end

@@ -89,7 +89,7 @@ defmodule ICalendar.Property do
 
   alias ICalendar.Util.Identifier
   def key_to_str(s) when is_binary(s), do: Identifier.normalize_keystr(s)
-  for {key, spec} <- @props do
+  for {key, _spec} <- @props do
     def key_to_str(unquote(key)) do
       unquote(Identifier.format_key_to_str(key))
       #   key

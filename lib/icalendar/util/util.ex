@@ -14,7 +14,9 @@ defmodule ICalendar.Util do
       delimeter
       |> case do
            '' -> ICalendar.Config.crlf
-           'escape' ++ chars -> Enum.flat_map(delimeter, &[?\\, &1])
+           'escape' ++ _chars ->
+             # TODO: Is this sensible code?
+             Enum.flat_map(delimeter, &[?\\, &1])
            chars -> chars
          end
       |> IO.chardata_to_string()
@@ -30,7 +32,7 @@ defmodule ICalendar.Util do
            [new_text | acc]
        end)
     |> case do # Trim unnecessary trailing delimeter
-         [totrim | rest] = all when byte_size(totrim) >= byte_size(delimeter) ->
+         [totrim | rest] when byte_size(totrim) >= byte_size(delimeter) ->
            txtsz = byte_size(totrim)
            delsz = byte_size(delimeter)
            [:binary.part(totrim, txtsz, txtsz-delsz) | rest]

@@ -5,7 +5,7 @@ defmodule ICalendar do
   Example:
 
     iex> use ICalendar
-    ...> ICalendar.new(
+    ...> I.Calendar.new(
     ...>    name: "My cool name",
     ...>    description: value("My description", param: "Param value")
     ...>    some_recurring_prop: [
@@ -13,24 +13,6 @@ defmodule ICalendar do
     ...>      value("Value with params", param: "Some param")
     ...>     ])
   """
-
-  @prodid "-//Polyfox//vObject 0.5.0//EN"
-
-  @spec new() :: %{:__type__ => {atom, map}, optional(atom) => {term, map}}
-  def new do
-    %{
-      # defaults
-      __type__: :calendar,
-      prodid: @prodid,
-      version: "2.0",
-      calscale: "GREGORIAN"
-    }
-  end
-
-  @spec new(props :: map) :: map
-  def new(props) do
-    struct(new(), props)
-  end
 
   defdelegate encode(object), to: ICalendar.Component.Encoder
   # defdelegate decode(string), to: ICalendar.Decoder
@@ -57,7 +39,7 @@ defmodule ICalendar do
   ```
   """
   defdelegate encode_to_iodata(object, options \\ []),
-    to: ICalendar.Encoder,
+    to: ICalendar.Component.Encoder,
     as: :encode
 
   # TODO: add param to support inline-encoding with comma:
@@ -72,7 +54,7 @@ defmodule ICalendar do
   defmacro value(val, params) do
     params =
       case params do
-        l when is_list(params) -> {:%{}, [], params}
+        l when is_list(l) -> {:%{}, [], params}
         o -> Map.new(o)
       end
 
@@ -84,7 +66,7 @@ defmodule ICalendar do
     end
   end
 
-  defmacro __using__(opts) do
+  defmacro __using__(_opts) do
     quote do
       import unquote(__MODULE__), only: [value: 2]
       alias ICalendar, as: I

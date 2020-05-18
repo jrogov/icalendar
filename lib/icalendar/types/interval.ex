@@ -22,7 +22,7 @@ defmodule ICalendar.Interval do
     do_calculate_end(start, end_arg)
   end
 
-  def do_calculate_end(start, nil) do
+  def do_calculate_end(_start, nil) do
     nil
   end
   def do_calculate_end(start, shift_opts) when is_list(shift_opts) do

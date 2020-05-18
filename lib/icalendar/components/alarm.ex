@@ -2,8 +2,6 @@ defmodule ICalendar.Alarm.Action do
   alias ICalendar.Property
   alias __MODULE__
 
-  @crlf ICalendar.Config.crlf()
-
   @action_mapping [
     {Action.Display, "DISPLAY"},
     {Action.Audio, "AUDIO"},
@@ -67,14 +65,14 @@ defmodule ICalendar.Alarm do
     {struct_opts, props} = Keyword.split(opts, [:action, :trigger])
 
     action =
-      opts
+      struct_opts
       |> Keyword.fetch!(:action)
       |> case do
            str when is_binary(str) or is_list(str) ->
              %Action.Display{description: str}
            %_{} = action -> action
          end
-    trigger = Keyword.fetch!(opts, :trigger)
+    trigger = Keyword.fetch!(struct_opts, :trigger)
 
     %Alarm{action: action, trigger: trigger, props: props}
   end
@@ -92,26 +90,26 @@ defmodule ICalendar.Alarm do
 
 
   # TODO: check
-  """
-  In an alarm set to trigger on the "START" of an event or to-do,
-  the "DTSTART" property MUST be present in the associated event or
-  to-do.  In an alarm in a "VEVENT" calendar component set to
-  trigger on the "END" of the event, either the "DTEND" property
-  MUST be present, or the "DTSTART" and "DURATION" properties MUST
-  both be present.  In an alarm in a "VTODO" calendar component set
-  to trigger on the "END" of the to-do, either the "DUE" property
-  MUST be present, or the "DTSTART" and "DURATION" properties MUST
-  both be present.
+  # """
+  # In an alarm set to trigger on the "START" of an event or to-do,
+  # the "DTSTART" property MUST be present in the associated event or
+  # to-do.  In an alarm in a "VEVENT" calendar component set to
+  # trigger on the "END" of the event, either the "DTEND" property
+  # MUST be present, or the "DTSTART" and "DURATION" properties MUST
+  # both be present.  In an alarm in a "VTODO" calendar component set
+  # to trigger on the "END" of the to-do, either the "DUE" property
+  # MUST be present, or the "DTSTART" and "DURATION" properties MUST
+  # both be present.
 
-  The alarm can be defined such that it triggers repeatedly.  A
-  definition of an alarm with a repeating trigger MUST include both
-  the "DURATION" and "REPEAT" properties.  The "DURATION" property
-  specifies the delay period, after which the alarm will repeat.
-  The "REPEAT" property specifies the number of additional
-  repetitions that the alarm will be triggered.  This repetition
-  count is in addition to the initial triggering of the alarm.  Both
-  of these properties MUST be present in order to specify a
-  repeating alarm.  If one of these two properties is absent, then
-  the alarm will not repeat beyond the initial trigger.
-  """
+  # The alarm can be defined such that it triggers repeatedly.  A
+  # definition of an alarm with a repeating trigger MUST include both
+  # the "DURATION" and "REPEAT" properties.  The "DURATION" property
+  # specifies the delay period, after which the alarm will repeat.
+  # The "REPEAT" property specifies the number of additional
+  # repetitions that the alarm will be triggered.  This repetition
+  # count is in addition to the initial triggering of the alarm.  Both
+  # of these properties MUST be present in order to specify a
+  # repeating alarm.  If one of these two properties is absent, then
+  # the alarm will not repeat beyond the initial trigger.
+  # """
 end

@@ -3,7 +3,6 @@ defmodule ICalendar.Event do
   alias __MODULE__
 
   alias ICalendar.Property
-  alias ICalendar.Alarm
 
   # TODO
   @type t :: %__MODULE__{
@@ -38,7 +37,7 @@ defmodule ICalendar.Event do
     ],
     alarms: []
   ]
-  @needprops @struct |> Map.drop([:__struct__, :__type__, :props]) |> Map.keys()
+  @mainprops @struct |> Map.drop([:__struct__, :__type__, :props]) |> Map.keys()
 
   # Maybe todo
   # def spec do
@@ -50,7 +49,7 @@ defmodule ICalendar.Event do
 
 
   def new(opts) do
-    {struct_opts, props} = Keyword.split(opts, @needprops)
+    {struct_opts, props} = Keyword.split(opts, @mainprops)
     struct(Event, [{:props, props} | struct_opts])
   end
 

@@ -35,7 +35,7 @@ defmodule ICalendar.Util.Identifier do
           {key, _} = unquote(enumerator).(elem)
           quote do
             def key_to_str(key) do
-              IO.inspect("HERE")
+              # IO.inspect("HERE")
               unquote(
                 key
                 |> Atom.to_string()
@@ -46,7 +46,7 @@ defmodule ICalendar.Util.Identifier do
           end
         end
         def key_to_str(key) do
-          IO.inspect("WTF")
+          # IO.inspect("WTF")
           Identifier.format_key_to_str(key)
         end
 

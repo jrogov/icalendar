@@ -8,31 +8,37 @@ defmodule ICalendar.Calendar do
             prodid: @prodid,
             version: "2.0",
             calscale: "GREGORIAN",
+            name: nil,
             props: [],
             contents: []
 
-  @optkeys [:prodid, :version, :calscale]
+  @mainprops [:prodid, :version, :calscale, :contents]
 
-  def new, do: %Calendar{}
-  def new(opts) do
-    {struct_base, props} = Keyword.split(opts, [:contents | @optkeys])
-    struct(%Calendar{props: props}, struct_base)
-  end
+  def new, do: new([])
+  def new(opts), do: with_props(opts)
   def new(contents, opts) do
-    {struct_base, props} = Keyword.split(opts, @optkeys)
-    struct(Calendar, [{:contents, contents}, {:props, props} | struct_base])
+    opts
+    |> Keyword.put(:contents, contents)
+    |> with_props()
+  end
+
+  def with_props(calendar \\ %Calendar{}, props) do
+    {struct_base, props} = Keyword.split(props, @mainprops)
+    struct(calendar, [{:props, props} | struct_base])
   end
 
   def encode(self) do
     %{prodid: prodid,
       version: version,
       calscale: calscale,
+      name: name,
       props: props,
       contents: contents} = self
     [
       [{:version, version},
        {:prodid, prodid},
-       {:calscale, calscale}
+       {:calscale, calscale},
+       {"X-WR-CALNAME", name}
        | props]
       |> Property.encode(),
       Component.encode(contents, :component)

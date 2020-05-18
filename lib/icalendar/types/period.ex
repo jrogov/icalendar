@@ -43,7 +43,7 @@ defmodule ICalendar.Period do
     Timex.Interval.new(from: from, until: until)
   end
 
-
+  alias ICalendar.Property.Value
   defimpl ICalendar.Property.Value do
     def encode(val, _opts) do
       from = Value.encode(val.from)

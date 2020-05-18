@@ -2,15 +2,9 @@ defmodule ICalendar.Component do
   alias ICalendar.Component, as: C
 
   @type one_or_many(t) :: t | [t]
-  # @type juncture :: dtstart
-  #                 | {dtstart, dtend}
-  #                 | {dtstart, timex_shift_options}
-
-  # def encode_juncture() do
-  # end
 
   @callback encode(self :: term) :: iodata
-  @callback decode(props :: list) :: term
+  # @callback decode(props :: list) :: term
 
   defmacro __using__(_) do
     quote do

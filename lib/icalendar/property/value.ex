@@ -1,9 +1,11 @@
+# TODO: 3.1: split long lines
+
 defprotocol ICalendar.Property.Value do
   @enforce_keys [:value]
   defstruct @enforce_keys ++ [params: %{}]
 
   @fallback_to_any true
-  @spec encode(value :: any, params :: map) :: iodata
+  @spec encode(value :: any, params :: map) :: {iodata, params :: map()} | iodata
   def encode(value, params \\ %{})
 end
 
@@ -55,7 +57,6 @@ end
 
 defimpl Value, for: BitString do
   def encode(val, _opts) do
-    # TODO: optimize: only run the regex if string contains those chars
     Value.Helpers.escape(val)
   end
 end

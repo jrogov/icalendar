@@ -50,7 +50,7 @@ defmodule ICalendar.Property.Param do
     }
   }
 
-  @typep spec :: %{atom => %{}}
+  # @typep spec :: %{atom => %{}}
 
   # TODO: generate all of this
 
@@ -65,7 +65,7 @@ defmodule ICalendar.Property.Param do
 
   alias ICalendar.Util.Identifier
   def key_to_str(s) when is_binary(s), do: Identifier.normalize_keystr(s)
-  for {key, spec} <- @params do
+  for {key, _spec} <- @params do
     def key_to_str(unquote(key)) do
       unquote(Identifier.format_key_to_str(key))
     end

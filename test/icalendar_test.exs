@@ -16,21 +16,6 @@ defmodule ICalendarTest do
     """)
   end
 
-  test "ICalendar.encode/1 skips property with empty (nil) value" do
-    ics =
-      I.Calendar.new(some_cool_prop: nil)
-      |> I.encode()
-      |> IO.chardata_to_string()
-
-    assert ics == Helpers.newline_to_crlf("""
-    BEGIN:VCALENDAR
-    VERSION:2.0
-    PRODID:-//arikai//iCalendar 0.5.0//EN
-    CALSCALE:GREGORIAN
-    END:VCALENDAR
-    """)
-  end
-
   test "ICalendar.encode/1 supports extra props" do
     ics =
       I.Calendar.new(some_cool_prop: "Some string")
@@ -43,6 +28,21 @@ defmodule ICalendarTest do
     PRODID:-//arikai//iCalendar 0.5.0//EN
     CALSCALE:GREGORIAN
     SOME-COOL-PROP:Some string
+    END:VCALENDAR
+    """)
+  end
+
+  test "ICalendar.encode/1 skips property with empty (nil) value" do
+    ics =
+      I.Calendar.new(some_cool_prop: nil)
+      |> I.encode()
+      |> IO.chardata_to_string()
+
+    assert ics == Helpers.newline_to_crlf("""
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    PRODID:-//arikai//iCalendar 0.5.0//EN
+    CALSCALE:GREGORIAN
     END:VCALENDAR
     """)
   end

@@ -1,7 +1,7 @@
-defmodule ICalendar.Project do
+defmodule ICalendar.MixProject do
   use Mix.Project
 
-  @version "0.5.0"
+  @version "0.6.0"
 
   def project do
     [
@@ -50,7 +50,7 @@ defmodule ICalendar.Project do
       # Generating Calendar UID
       {:elixir_uuid, "~> 1.2"},
 
-      {:eflame, "~> 1.0.1", only: :dev},
+      {:eflame, "~> 1.0.1", only: :dev}
     ]
   end
 end

@@ -12,7 +12,7 @@ defmodule ICalendar.Calendar do
             props: [],
             contents: []
 
-  @mainprops [:prodid, :version, :calscale, :contents]
+  @mainprops [:prodid, :version, :calscale, :contents, :name]
 
   def new, do: new([])
   def new(opts), do: with_props(opts)
